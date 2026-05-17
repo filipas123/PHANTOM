@@ -31,7 +31,7 @@
       </div>
 
       <div class="sidebar-search">
-        <input type="text" id="search-conversations" placeholder="Search conversations..." />
+        <input type="text" id="search-conversations" aria-label="Search conversations" placeholder="Search conversations..." />
       </div>
 
       <div id="conversation-list" class="conversation-list">
@@ -126,6 +126,7 @@
           <!-- image-osint-btn injected by app.js before textarea -->
           <textarea
             id="message-input"
+            aria-label="Message input"
             placeholder="Ask PHANTOM anything... or drop an image for OSINT (Ctrl+Enter to send)"
             rows="1"
             autofocus
@@ -155,8 +156,8 @@
         <h2 class="sudo-modal-title">Sudo Access</h2>
         <p class="sudo-modal-desc">Enter your sudo password to grant PHANTOM elevated privileges for tool installation and system operations. This is validated once and stored in memory only.</p>
         <div class="sudo-modal-input-wrap">
-          <input type="password" id="sudo-modal-password" placeholder="Enter sudo password..." autocomplete="off" />
-          <button id="sudo-modal-toggle-eye" class="btn-icon-sm" title="Show/Hide">👁️</button>
+          <input type="password" id="sudo-modal-password" aria-label="Sudo password" placeholder="Enter sudo password..." autocomplete="off" />
+          <button id="sudo-modal-toggle-eye" class="btn-icon-sm" title="Show/Hide" aria-label="Toggle password visibility">👁️</button>
         </div>
         <div id="sudo-modal-feedback" class="sudo-modal-feedback"></div>
         <div class="sudo-modal-actions">
