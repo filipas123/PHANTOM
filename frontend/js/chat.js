@@ -4,7 +4,7 @@
  *  - Real-time typing animation (character by character)
  *  - AI thinking/reasoning display (shown before the answer)
  *  - FIXED: Auto-scroll now works correctly during streaming
- *  - Image message support (OSINT)
+ *  - Image message support
  */
 window.Chat = {
   messagesEl: null,

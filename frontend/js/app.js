@@ -217,23 +217,13 @@
     let finalContent = content;
 
     if (pendingImage) {
-      // Build OSINT prompt with base64 image encoded as data URL
-      const osintPrompt = content
-        ? content
-        : `I'm providing an image of a person for OSINT research. Please analyze this image and:
-1. Describe physical features visible (age estimate, distinctive features, etc.)
-2. Search the web for people matching this description
-3. Use search_web to find any public information about this person
-4. Check social media presence using search_web (LinkedIn, Twitter, Instagram, Facebook)
-5. Use scrapling_fetch for deeper investigation of any relevant pages found
-6. Compile all findings into a comprehensive OSINT report
+      // Build prompt with base64 image encoded as data URL
 
-Start the investigation immediately!`;
 
-      Chat.addUserMessage(finalContent || '🖼️ Image provided for OSINT analysis', pendingImage);
+      Chat.addUserMessage(finalContent || '🖼️ Image provided', pendingImage);
 
       // Send with image context embedded in message
-      const imageMsg = `${osintPrompt}\n\n[IMAGE ATTACHED: ${pendingImageName || 'image.png'} — base64 encoded image of person to investigate]\nImage data: ${pendingImage}`;
+      const imageMsg = `${content ? content : 'Please analyze this image.'}\n\n[IMAGE ATTACHED: ${pendingImageName || 'image.png'}]\nImage data: ${pendingImage}`;
 
       messageInput.value = '';
       messageInput.style.height = 'auto';
@@ -317,7 +307,7 @@ Start the investigation immediately!`;
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
-    fileInput.id = 'osint-file-input';
+    fileInput.id = 'image-upload-input';
     document.body.appendChild(fileInput);
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -327,9 +317,9 @@ Start the investigation immediately!`;
 
     // ── Image button in input bar ──
     const imageBtn = document.createElement('button');
-    imageBtn.id = 'image-osint-btn';
-    imageBtn.className = 'image-osint-btn';
-    imageBtn.title = 'Drop image for OSINT analysis';
+    imageBtn.id = 'image-upload-btn';
+    imageBtn.className = 'image-upload-btn';
+    imageBtn.title = 'Attach an image';
     imageBtn.innerHTML = '🖼️';
     imageBtn.addEventListener('click', () => fileInput.click());
     inputContainer.insertBefore(imageBtn, inputContainer.querySelector('textarea'));
