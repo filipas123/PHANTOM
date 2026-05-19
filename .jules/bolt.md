@@ -13,3 +13,7 @@
 ## 2026-05-18 - [SQLite Temporary B-Tree Sorting Bottleneck]
 **Learning:** In SQLite, queries using `ORDER BY` with unindexed or partially indexed columns (like `ORDER BY updated_at DESC` or `WHERE conversation_id = ? ORDER BY created_at ASC`) fallback to a temporary B-Tree sort (`USE TEMP B-TREE FOR ORDER BY` in `EXPLAIN QUERY PLAN`). This becomes a noticeable performance bottleneck for frequent queries as data grows.
 **Action:** Always add targeted indexes, especially composite indexes like `(conversation_id, created_at ASC)`, to allow SQLite to natively return sorted results without secondary sorting overhead. This is a common and necessary optimization for this application's database access patterns.
+
+## 2026-05-19 - [Consolidating Regex Passes for String Sanitization]
+**Learning:** Performance optimization for string processing (like `escapeHtml`) heavily favors consolidated regex passes with replacer functions `str.replace(/[&<>"]/g, m => map[m])` over chained `.replace()` calls. Chained replaces redundantly traverse the entire string multiple times.
+**Action:** When performing multiple simple substring replacements on long strings, always use a single regex pass with a dictionary map instead of chained replaces.
