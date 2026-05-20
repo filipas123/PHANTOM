@@ -420,6 +420,7 @@ window.Chat = {
 
   escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+    return str.replace(/[&<>"]/g, m => map[m]);
   },
 };
