@@ -352,6 +352,7 @@
     imageBtn.id = 'image-upload-btn';
     imageBtn.className = 'image-upload-btn';
     imageBtn.title = 'Attach an image';
+    imageBtn.setAttribute('aria-label', 'Attach an image');
     imageBtn.innerHTML = '🖼️';
     imageBtn.addEventListener('click', () => fileInput.click());
     inputContainer.insertBefore(imageBtn, inputContainer.querySelector('textarea'));
