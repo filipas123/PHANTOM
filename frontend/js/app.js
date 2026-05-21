@@ -197,7 +197,7 @@
         break;
 
       case 'tool_result':
-          if (msg.name === 'show_preview_window') {
+          if (msg.name === 'show_preview_window' || msg.name === 'show_code_demo') {
             try {
               const resObj = typeof msg.result === 'string' ? JSON.parse(msg.result) : msg.result;
               if (resObj.html_content) {
