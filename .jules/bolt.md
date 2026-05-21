@@ -21,3 +21,7 @@
 ## 2024-05-19 - [SQLite Temporary B-Tree Sorting Bottleneck in Memories and MCP Servers]
 **Learning:** Queries on `memories` (like `ORDER BY updated_at DESC` or `WHERE category = ? ORDER BY updated_at DESC`) and `mcp_servers` (`ORDER BY created_at DESC`) lacked appropriate indexes, leading to temporary B-Tree sorts. This became apparent as these tables are queried frequently for settings/knowledge retrieval and loading integrations.
 **Action:** Added `idx_memories_updated`, `idx_memories_cat_updated`, and `idx_mcp_servers_created` to the schema in `server/memory/store.js` to ensure fast, indexed sorting for these core tables.
+
+## 2024-05-24 - [Array shift() Bottleneck in Animation Loops]
+**Learning:** In the frontend (`frontend/js/chat.js`), using an array for the `typingQueue` and popping characters off the front with `Array.shift()` inside a `requestAnimationFrame` loop creates a severe O(N^2) performance bottleneck for long AI responses. `Array.shift()` has O(N) complexity since it must re-index all remaining elements.
+**Action:** Retained the array-based queue to safely handle Unicode surrogate pairs (since strings split them when slicing blindly), but introduced a `typingIndex` pointer to track progress instead of mutating the array. Incrementing the pointer (`typingQueue[typingIndex++]`) replaces the O(N) `shift()` operation with O(1) reads, drastically reducing overhead inside high-frequency animation loops.
