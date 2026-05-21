@@ -3,6 +3,31 @@
  */
 export function getToolDefinitions() {
   return [
+  {
+    type: 'function',
+    function: {
+      name: 'show_code_demo',
+      description: 'Render syntax-highlighted code directly in the user\'s UI. Use this when the user asks for a code demonstration or snippet to be displayed in a clean, highlighted window.',
+      parameters: {
+        type: 'object',
+        properties: {
+          code: {
+            type: 'string',
+            description: 'The code to render and highlight.',
+          },
+          language: {
+            type: 'string',
+            description: 'The programming language of the code (e.g., "javascript", "python", "html").',
+          },
+          title: {
+            type: 'string',
+            description: 'The title to display on the preview window.',
+          },
+        },
+        required: ['code', 'language'],
+      },
+    },
+  },
     {
       type: 'function',
       function: {
@@ -493,6 +518,19 @@ export function getToolDefinitions() {
               type: 'array',
               items: { type: 'string' },
               description: 'List of node names (e.g., open ports, subdomains, related services) to include in the graph.',
+            },
+            edges: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  source: { type: 'string' },
+                  target: { type: 'string' },
+                  label: { type: 'string' }
+                },
+                required: ['source', 'target']
+              },
+              description: 'Optional list of edges defining complex relationships between nodes or the target.',
             },
           },
           required: ['target_name', 'nodes'],

@@ -39,6 +39,7 @@ export async function executeTool(name, args, onProgress) {
     case 'save_trace': return await saveTrace(args);
     case 'scrapling_fetch': return await scraplingFetch(args, onProgress);
     case 'show_preview_window': return showPreviewWindow(args);
+    case 'show_code_demo': return showCodeDemo(args);
     case 'write_skill': return await writeSkill(args);
     case 'analyze_target_graph': return analyzeTargetGraph(args);
     case 'get_system_capabilities': return await getSystemCapabilitiesTool();
@@ -95,10 +96,58 @@ function showPreviewWindow({ html_content, title, open_new_window }) {
 }
 
 /**
+ * Handle show_code_demo execution.
+ */
+function showCodeDemo({ code, language, title }) {
+  if (!code || !language) {
+    throw new Error('code and language are required to show code demo.');
+  }
+
+  const escapedCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${title || 'Code Demo'}</title>
+  <style>
+    body { font-family: sans-serif; background: #0d0d0d; color: #f3f4f6; padding: 20px; margin: 0; }
+    pre { background: #1a1a1a; padding: 20px; border-radius: 8px; overflow-x: auto; }
+    code { font-family: 'Courier New', Courier, monospace; }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/${language}.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((el) => {
+        hljs.highlightElement(el);
+      });
+    });
+  </script>
+</head>
+<body>
+  <h2>${title || 'Code Demo'}</h2>
+  <pre><code class="language-${language}">${escapedCode}</code></pre>
+</body>
+</html>
+  `;
+
+  return JSON.stringify({
+    success: true,
+    message: `Successfully rendered code demo: "${title || 'Code Demo'}"`,
+    html_content: htmlContent,
+    title: title || 'Code Demo',
+    open_new_window: true
+  });
+}
+
+/**
  * Handle analyze_target_graph execution.
  * Autonomously creates a visualization and delegates to showPreviewWindow to open it in a new window.
  */
-function analyzeTargetGraph({ target_name, nodes }) {
+function analyzeTargetGraph({ target_name, nodes, edges }) {
   if (!target_name || !nodes || !Array.isArray(nodes)) {
     throw new Error('target_name and nodes array are required.');
   }
@@ -107,10 +156,32 @@ function analyzeTargetGraph({ target_name, nodes }) {
   const escapedTarget = target_name.replace(/"/g, '\\"');
   let mermaidNodes = `graph TD;\n  Target["${escapedTarget}"]`;
 
+  // Create a map to securely reference nodes by ID
+  const nodeMap = { [target_name]: 'Target' };
+
   nodes.forEach((node, index) => {
     const escapedNode = node.replace(/"/g, '\\"');
-    mermaidNodes += `\n  Target --> Node${index}["${escapedNode}"]`;
+    const nodeId = `Node${index}`;
+    nodeMap[node] = nodeId;
+    mermaidNodes += `\n  ${nodeId}["${escapedNode}"]`;
   });
+
+  if (edges && Array.isArray(edges) && edges.length > 0) {
+    edges.forEach((edge) => {
+      const sourceId = nodeMap[edge.source] || `Unknown${Math.floor(Math.random()*10000)}`;
+      const targetId = nodeMap[edge.target] || `Unknown${Math.floor(Math.random()*10000)}`;
+      if (edge.label) {
+         mermaidNodes += `\n  ${sourceId} -- "${edge.label.replace(/"/g, '\\"')}" --> ${targetId}`;
+      } else {
+         mermaidNodes += `\n  ${sourceId} --> ${targetId}`;
+      }
+    });
+  } else {
+    // Fallback to simple star topology if no edges provided
+    nodes.forEach((node, index) => {
+      mermaidNodes += `\n  Target --> Node${index}`;
+    });
+  }
 
   const htmlContent = `
 <!DOCTYPE html>
