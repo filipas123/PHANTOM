@@ -14,6 +14,7 @@ window.Chat = {
   isStreaming: false,
   // Typing animation state
   typingQueue: [],
+  typingIndex: 0,
   typingTimer: null,
   typingSpeed: 22, // ms per character — slightly slower for visible effect
   // Thinking state
@@ -42,6 +43,7 @@ window.Chat = {
     this.currentThinkingEl = null;
     this.thinkingContent = '';
     this.typingQueue = [];
+    this.typingIndex = 0;
     this._userScrolled = false;
     if (this.typingTimer) {
       cancelAnimationFrame(this.typingTimer);
@@ -138,6 +140,7 @@ window.Chat = {
     this.currentContent = '';
     this.renderedContent = '';
     this.typingQueue = [];
+    this.typingIndex = 0;
     this.currentAssistantEl = document.createElement('div');
     this.currentAssistantEl.className = 'message assistant';
 
@@ -181,33 +184,34 @@ window.Chat = {
     let lastTime = 0;
 
     const animate = (timestamp) => {
-      if (!this.isStreaming && this.typingQueue.length === 0) {
+      if (!this.isStreaming && this.typingIndex >= this.typingQueue.length) {
         return; // Stop the loop
       }
 
-      if (this.typingQueue.length > 0) {
+      if (this.typingIndex < this.typingQueue.length) {
         const elapsed = timestamp - lastTime;
 
         // Adaptive speed: speed up when queue grows to prevent lag
+        const queueSize = this.typingQueue.length - this.typingIndex;
         let speed = this.typingSpeed;
-        if (this.typingQueue.length > 200) speed = 1;
-        else if (this.typingQueue.length > 100) speed = 3;
-        else if (this.typingQueue.length > 50) speed = 6;
-        else if (this.typingQueue.length > 20) speed = 8;
+        if (queueSize > 200) speed = 1;
+        else if (queueSize > 100) speed = 3;
+        else if (queueSize > 50) speed = 6;
+        else if (queueSize > 20) speed = 8;
 
         if (elapsed >= speed) {
           // Batch size also adapts to prevent falling behind
           const batchSize = Math.min(
-            this.typingQueue.length,
-            this.typingQueue.length > 200 ? 30 :
-            this.typingQueue.length > 100 ? 15 :
-            this.typingQueue.length > 50 ? 8 :
-            this.typingQueue.length > 20 ? 4 : 2
+            queueSize,
+            queueSize > 200 ? 30 :
+            queueSize > 100 ? 15 :
+            queueSize > 50 ? 8 :
+            queueSize > 20 ? 4 : 2
           );
 
           for (let i = 0; i < batchSize; i++) {
-            if (this.typingQueue.length > 0) {
-              this.renderedContent += this.typingQueue.shift();
+            if (this.typingIndex < this.typingQueue.length) {
+              this.renderedContent += this.typingQueue[this.typingIndex++];
             }
           }
 
@@ -235,9 +239,10 @@ window.Chat = {
       if (typing) typing.remove();
 
       // Flush any remaining queued characters
-      if (this.typingQueue.length > 0) {
-        this.renderedContent += this.typingQueue.join('');
+      if (this.typingIndex < this.typingQueue.length) {
+        this.renderedContent += this.typingQueue.slice(this.typingIndex).join('');
         this.typingQueue = [];
+        this.typingIndex = 0;
       }
 
       // Final full render
