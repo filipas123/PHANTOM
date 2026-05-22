@@ -32,9 +32,37 @@ function validateUrlForSSRF(urlString) {
     throw new Error('Invalid URL protocol. Only http and https are allowed.');
   }
 
-  const forbiddenHosts = ['localhost', '127.0.0.1', '169.254.169.254', '0.0.0.0', '::1'];
-  if (forbiddenHosts.includes(parsedUrl.hostname)) {
+  const hostname = parsedUrl.hostname.toLowerCase();
+
+  // Exact matches
+  const forbiddenHosts = ['localhost', '127.0.0.1', '169.254.169.254', '0.0.0.0', '::1', '[::1]', '[0:0:0:0:0:0:0:1]'];
+  if (forbiddenHosts.includes(hostname)) {
     throw new Error('Access to internal/local hostnames is forbidden (SSRF protection).');
+  }
+
+  // IPv4 Loopback and ANY
+  if (/^127\.\d+\.\d+\.\d+$/.test(hostname) || hostname === '0.0.0.0') {
+    throw new Error('Access to loopback/ANY addresses is forbidden (SSRF protection).');
+  }
+
+  // AWS Metadata
+  if (/^169\.254\.169\.254$/.test(hostname)) {
+    throw new Error('Access to cloud metadata is forbidden (SSRF protection).');
+  }
+
+  // IPv6 Loopback
+  if (/^\[?::1\]?$/.test(hostname) || /^\[?0:0:0:0:0:0:0:1\]?$/.test(hostname)) {
+    throw new Error('Access to IPv6 loopback is forbidden (SSRF protection).');
+  }
+
+  // Localhost aliases and dynamic DNS services
+  if (
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.nip.io') ||
+    hostname.endsWith('.xip.io') ||
+    hostname.endsWith('.sslip.io')
+  ) {
+    throw new Error('Access to dynamic DNS loopbacks/local domains is forbidden (SSRF protection).');
   }
 
   return parsedUrl;
