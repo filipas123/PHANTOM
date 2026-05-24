@@ -9,6 +9,7 @@ import {
   getMCPServers, addMCPServer, removeMCPServer,
 } from '../memory/store.js';
 import { getToolDefinitions } from '../tools/registry.js';
+import { validateUrlForSSRF } from '../tools/executor.js';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -343,17 +344,12 @@ router.post('/doctor/chat', async (req, res) => {
   const baseUrl = (doctorCfg.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
 
   try {
-    const url = new URL(baseUrl);
-    if (!['http:', 'https:'].includes(url.protocol)) {
-      return res.status(400).json({ error: 'Invalid API URL protocol' });
-    }
-    // SSRF Protection: Prevent querying local/internal network interfaces
-    const forbiddenHosts = ['localhost', '127.0.0.1', '169.254.169.254', '0.0.0.0', '::1'];
-    if (forbiddenHosts.includes(url.hostname)) {
-      return res.status(403).json({ error: 'Access to internal/local hostnames is forbidden' });
-    }
+    validateUrlForSSRF(baseUrl);
   } catch (err) {
-    return res.status(400).json({ error: 'Invalid API URL' });
+    if (err.message === 'Invalid URL format' || err.message.includes('protocol')) {
+      return res.status(400).json({ error: err.message });
+    }
+    return res.status(403).json({ error: err.message });
   }
 
   const apiKey  = doctorCfg.apiKey;
