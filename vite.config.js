@@ -15,4 +15,11 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'frontend/index.html'
+      },
+    },
+  }
 });
