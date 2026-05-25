@@ -20,7 +20,7 @@ function escapeShellArg(arg) {
  * Validates URLs to prevent SSRF vulnerabilities by ensuring they use allowed protocols
  * and do not point to internal or forbidden hostnames.
  */
-function validateUrlForSSRF(urlString) {
+export function validateUrlForSSRF(urlString) {
   let parsedUrl;
   try {
     parsedUrl = new URL(urlString);
