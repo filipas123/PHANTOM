@@ -42,3 +42,17 @@ export function getHistory() {
   if (!currentSession.conversationId) return [];
   return getMessages(currentSession.conversationId);
 }
+
+let _activeSession = null;
+
+export function setActiveTelegramSession(bot, chatId) {
+  _activeSession = { bot, chatId };
+}
+
+export function getActiveTelegramSession() {
+  return _activeSession;
+}
+
+export function clearActiveTelegramSession() {
+  _activeSession = null;
+}

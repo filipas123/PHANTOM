@@ -56,3 +56,12 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `server/utils/telegramify.js`
 - `server/telegram/bot.js`
 - `tests/telegram.test.js`
+
+## Fix Telegram Markdown and Add File Sending (Dec 2024)
+- Fixed Telegram MarkdownV2 formatting by replacing the Python `sudoskys/telegramify-markdown` shell call with the native Node.js `telegramify-markdown` npm package.
+- Created `server/telegram/sender.js` as the single source of truth for all Telegram sending. Handles Markdown conversion, chunking messages, fallbacks, tool updates, and media.
+- Refactored `server/telegram/bot.js` to strictly import from `sender.js`. Removed direct `bot.sendMessage()` calls.
+- Exposed active session globally via `server/telegram/session.js` allowing tools to access chat metadata.
+- Added `send_file_to_telegram` tool in `server/tools/registry.js` and `executor.js`, allowing the AI to send files to the active Telegram user using `mime-types`.
+- Added unit tests for `sender.js` and updated existing bot tests.
+- Status: All tests pass.

@@ -29,11 +29,7 @@ vi.mock('node-telegram-bot-api', () => {
 
 // Mock LLM processMessage
 // Mock telegramify utility
-vi.mock('../server/utils/telegramify.js', () => ({
-  convertMarkdown: vi.fn().mockResolvedValue([
-    { type: 'text', text: 'AI Response', entities: [] }
-  ])
-}));
+
 
 vi.mock('../server/ai/llm-client.js', () => ({
   processMessage: vi.fn().mockImplementation((convId, text, onChunk) => {
@@ -89,7 +85,7 @@ describe('Telegram Bot Integration', () => {
     });
 
     expect(mockSendMessage).toHaveBeenCalled();
-    expect(mockSendMessage.mock.calls[0][1]).toContain('Server Status');
+    expect(mockSendMessage.mock.calls[0][1]).toContain('PHANTOM Status');
   });
 
   it('should handle /stop command and update session status', async () => {
@@ -105,7 +101,7 @@ describe('Telegram Bot Integration', () => {
           text: '/stop'
       });
 
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('Task stopped.'), { entities: undefined });
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, '✅ Task stopped.');
       expect(getSession().status).toBe('stopped');
   });
 
@@ -117,9 +113,9 @@ describe('Telegram Bot Integration', () => {
           text: 'Hello world'
       });
 
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('Processing...'), { entities: undefined });
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Processing...');
       // It should also send the response back
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'AI Response', { entities: [] });
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('AI Response'), expect.objectContaining({ parse_mode: 'MarkdownV2' }));
       expect(getSession().status).toBe('idle'); // Should reset to idle after completion
   });
 });

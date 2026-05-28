@@ -497,6 +497,27 @@ export function getToolDefinitions() {
         },
       },
     },
+        {
+      type: 'function',
+      function: {
+        name: 'send_file_to_telegram',
+        description: 'Sends a file from the server filesystem to the active Telegram chat. Supports images (jpg, png, gif, webp), videos (mp4, mov, avi), audio (mp3, wav, flac), and any other file type as a document. Only files in workspace/ or /tmp/ can be sent. Use this when the user asks to see a file, screenshot, image, audio clip, or video.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_path: {
+              type: 'string',
+              description: 'Path to the file. Can be relative to project root (e.g. workspace/report.pdf) or absolute.'
+            },
+            caption: {
+              type: 'string',
+              description: 'Optional caption to display under the file in Telegram.'
+            }
+          },
+          required: ['file_path']
+        }
+      }
+    },
     {
       type: 'function',
       function: {
