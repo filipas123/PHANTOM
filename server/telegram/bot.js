@@ -1,57 +1,16 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { processMessage } from '../ai/llm-client.js';
-import { startSession, stopSession, getSession, resetSession, getHistory } from './session.js';
+import { startSession, stopSession, getSession, resetSession, getHistory, setActiveTelegramSession, clearActiveTelegramSession } from './session.js';
 import config, { updateConfig } from '../config.js';
 import { setSetting } from '../memory/store.js';
 import { resetClient } from '../ai/llm-client.js';
 import { getToolDefinitions } from '../tools/registry.js';
 import os from 'os';
-import { convertMarkdown } from '../utils/telegramify.js';
-import fs from 'fs';
+import { sendAIReply, sendPlain, sendToolUpdate, sendError } from './sender.js';
 
 let bot = null;
 let currentConfig = null;
 let lastError = null;
-
-// Helper to chunk long messages (Telegram limit is 4096)
-// Helper to chunk long messages
-function splitMessage(textOrChunk, limit = 4000) {
-  if (typeof textOrChunk === 'object' && textOrChunk.text) {
-      // For parsed entities, we let the lib handle chunks or assume they are pre-chunked by telegramify
-      return [textOrChunk];
-  }
-  const text = textOrChunk;
-  const chunks = [];
-  let currentChunk = '';
-  const lines = text.split('\n');
-
-  for (const line of lines) {
-    if ((currentChunk.length + line.length + 1) > limit) {
-      chunks.push(currentChunk);
-      currentChunk = line + '\n';
-    } else {
-      currentChunk += line + '\n';
-    }
-  }
-  if (currentChunk.trim().length > 0) {
-    chunks.push(currentChunk);
-  }
-  return chunks;
-}
-
-
-export async function sendMessage(text) {
-  if (!bot || !currentConfig || !currentConfig.userId) return;
-  try {
-    const chunks = splitMessage(text);
-    for (const chunk of chunks) {
-      await bot.sendMessage(currentConfig.userId, chunk.text || chunk, { entities: chunk.entities });
-    }
-  } catch (err) {
-    console.error('[Telegram] Error sending message:', err.message);
-  }
-}
-
 
 export function startBot(cfg) {
   if (bot) {
@@ -88,10 +47,12 @@ export function startBot(cfg) {
         return; // Silently ignore
       }
 
+      setActiveTelegramSession(bot, chatId);
+
       const text = msg.text || '';
 
       if (text === '/start') {
-        await sendMessage('👻 PHANTOM online. Send me a task.');
+        await sendPlain(bot, chatId, '👻 PHANTOM online\nSend me a task and I\'ll handle it autonomously.');
         return;
       }
 
@@ -99,9 +60,9 @@ export function startBot(cfg) {
         const session = getSession();
         if (session.status === 'running') {
           stopSession();
-          await sendMessage('⏹️ Task stopped.');
+          await sendPlain(bot, chatId, '✅ Task stopped.');
         } else {
-          await sendMessage('No task is currently running.');
+          await sendPlain(bot, chatId, 'No task is currently running.');
         }
         return;
       }
@@ -110,47 +71,48 @@ export function startBot(cfg) {
       if (text.startsWith('/model')) {
           const parts = text.split(' ');
           if (parts.length < 2) {
-              await sendMessage('Usage: /model <model_id>');
+              await sendPlain(bot, chatId, 'Usage: /model <model_id>');
               return;
           }
           const newModel = parts[1];
           updateConfig({ model: newModel });
           setSetting('api_model', newModel);
           resetClient();
-          await sendMessage(`✅ Model changed to: ${newModel}`);
+          await sendPlain(bot, chatId, `✅ Model changed to: ${newModel}`);
           return;
       }
 
       if (text === '/status') {
           const uptime = os.uptime();
           const tools = getToolDefinitions();
-          await sendMessage(`🤖 Server Status:\n- Uptime: ${Math.floor(uptime / 60)} minutes\n- Model: ${config.api.model}\n- Tools: ${tools.length}`);
+          const status = `**PHANTOM Status**\n\n- **Uptime:** ${Math.floor(uptime)}s\n- **Model:** ${config.api.model}\n- **Tools:** ${tools.length}`;
+          await sendAIReply(bot, chatId, status);
           return;
       }
 
       if (text === '/memory') {
           // get history
           const history = getHistory();
-          const recent = history.slice(-5).map(m => `[${m.role}] ${m.content ? m.content.substring(0, 100) + '...' : 'Tool call/result'}`);
-          await sendMessage(recent.length > 0 ? recent.join('\n') : 'No recent memory.');
+          const recent = history.slice(-5).map(m => `- [${m.role}] ${m.content ? m.content.substring(0, 100) + '...' : 'Tool call/result'}`);
+          await sendAIReply(bot, chatId, recent.length > 0 ? recent.join('\n') : 'No recent memory.');
           return;
       }
 
       if (text === '/newchat' || text === '/new') {
           resetSession();
-          await sendMessage('🧹 Conversation reset. Send me a new task.');
+          await sendPlain(bot, chatId, '🔄 New session started.');
           return;
       }
 
       // Regular message
       const session = getSession();
       if (session.status === 'running') {
-        await sendMessage('⏳ Already running a task. Send /stop to cancel.');
+        await sendPlain(bot, chatId, '⏳ Already running a task. Send /stop to cancel.');
         return;
       }
 
       const activeSession = startSession();
-      await sendMessage('Processing...');
+      await sendPlain(bot, chatId, 'Processing...');
 
 
       try {
@@ -172,13 +134,13 @@ export function startBot(cfg) {
                 sendTyping();
             },
             (toolCall) => {
-                sendMessage(`⚙️ Tool called: ${toolCall.name}\nArguments: ${JSON.stringify(toolCall.args, null, 2)}`);
+                sendToolUpdate(bot, chatId, toolCall.name, toolCall.args, 'running');
             },
             (toolResult) => {
-                sendMessage(`✅ Tool finished: ${toolResult.name}\nResult:\n\`\`\`\n${typeof toolResult.result === 'string' ? toolResult.result.substring(0, 1000) : '...'}\n\`\`\``);
+                sendToolUpdate(bot, chatId, toolResult.name, null, 'done');
             },
             (err) => {
-                sendMessage(`❌ Error: ${err}`);
+                sendError(bot, chatId, err);
             },
             () => {
                 // Throttle typing indicators
@@ -192,30 +154,15 @@ export function startBot(cfg) {
         );
 
         if (activeSession.status !== 'stopped' && aiFullResponse.trim() !== '') {
-            try {
-                const results = await convertMarkdown(aiFullResponse);
-                for (const item of results) {
-                    if (item.type === 'text') {
-                        await bot.sendMessage(currentConfig.userId, item.text, { entities: item.entities });
-                    } else if (item.type === 'file') {
-                        const fileBuf = Buffer.from(item.file_data, 'base64');
-                        await bot.sendDocument(currentConfig.userId, fileBuf, {}, { filename: item.file_name });
-                    } else if (item.type === 'photo') {
-                        const fileBuf = Buffer.from(item.file_data, 'base64');
-                        await bot.sendPhoto(currentConfig.userId, fileBuf, {}, { filename: item.file_name });
-                    }
-                }
-            } catch (err) {
-                console.error('[Telegram] Rendering failed, falling back to raw text:', err);
-                await sendMessage(aiFullResponse);
-            }
+            await sendAIReply(bot, chatId, aiFullResponse);
         }
       } catch (err) {
-        await sendMessage(`❌ Error: ${err.message}`);
+        await sendError(bot, chatId, err.message);
       } finally {
         if(activeSession.status === 'running') {
             activeSession.status = 'idle';
         }
+        clearActiveTelegramSession();
       }
     });
 
@@ -242,22 +189,4 @@ export function getBotStatus() {
         userId: currentConfig ? currentConfig.userId : null,
         error: lastError
     };
-}
-
-
-export async function sendMediaFile(filePath, caption = '') {
-  if (!bot || !currentConfig || !currentConfig.userId) return;
-  try {
-    const ext = filePath.split('.').pop().toLowerCase();
-    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-    if (imageExts.includes(ext)) {
-      await bot.sendPhoto(currentConfig.userId, filePath, { caption });
-    } else {
-      await bot.sendDocument(currentConfig.userId, filePath, { caption });
-    }
-    return `Media sent to Telegram successfully.`;
-  } catch (err) {
-    console.error('[Telegram] Error sending media:', err.message);
-    throw err;
-  }
 }

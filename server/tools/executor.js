@@ -94,7 +94,7 @@ export async function executeTool(name, args, onProgress) {
     case 'show_code_demo': return showCodeDemo(args);
     case 'write_skill': return await writeSkill(args);
     case 'analyze_target_graph': return analyzeTargetGraph(args);
-    case 'send_telegram_media': return await sendMediaFileTool(args);
+    case 'send_file_to_telegram': return await sendFileToTelegramTool(args);
     case 'get_system_capabilities': return await getSystemCapabilitiesTool();
     default:
       return `Unknown tool: ${name}`;
@@ -857,17 +857,15 @@ async function getSystemCapabilitiesTool() {
 }
 
 
-/**
- * Send media to Telegram
- */
-async function sendMediaFileTool({ file_path, caption }) {
-  try {
-    const resolvedPath = resolve(file_path);
-    if (!existsSync(resolvedPath)) {
-      return `Error: File does not exist at ${resolvedPath}`;
-    }
-    return await sendMediaFile(resolvedPath, caption);
-  } catch (err) {
-    return `Error sending media: ${err.message}`;
+async function sendFileToTelegramTool({ file_path, caption = '' }) {
+  // Get the active Telegram chat ID from the session
+  const { getActiveTelegramSession } = await import('../telegram/session.js');
+  const session = getActiveTelegramSession();
+
+  if (!session || !session.chatId || !session.bot) {
+    return { success: false, error: 'No active Telegram session. This tool only works when called from a Telegram chat.' };
   }
+
+  const { sendFile } = await import('../telegram/sender.js');
+  return await sendFile(session.bot, session.chatId, file_path, caption);
 }
