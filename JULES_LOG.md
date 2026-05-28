@@ -79,3 +79,8 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
+## Thu May 28 19:29:08 UTC 2026 - Path Traversal in Skill Upload
+- Prevent path traversal by validating skillName with regex
+- Fixes in server/routes/api.js
+- Tests pass (npm test)
+- Commit: f5e80cf723537679db7e0e90d3a292c1594994c6
