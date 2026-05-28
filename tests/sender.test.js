@@ -68,3 +68,19 @@ describe('sendError()', () => {
     expect(callArg).toContain('❌');
   });
 });
+
+import { fixUnescapedChars } from '../server/telegram/sender.js';
+
+describe('fixUnescapedChars()', () => {
+  it('escapes ( and ) outside code blocks', () => {
+    const result = fixUnescapedChars('nmap -sV (target)');
+    expect(result).toContain('\\(');
+    expect(result).toContain('\\)');
+  });
+
+  it('does NOT escape chars inside code blocks', () => {
+    const result = fixUnescapedChars('```\nnmap -sV (target)\n```');
+    expect(result).toContain('(target)');
+    expect(result).not.toContain('\\(');
+  });
+});
