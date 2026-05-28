@@ -79,3 +79,11 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
+
+## YYYY-MM-DD Security Fix
+- Addressed a missing path validation vulnerability in `server/tools/executor.js` for file operations (`readFileContent`, `writeFileContent`, `listDirectory`).
+- Evaluated `config.workspace` to be the boundary string to compare path strings.
+- Applied validation checks in relevant tool executions.
+- Updated `tests/tools.test.js` to ensure configurations isolate the workspace properly for test runs.
+- Tested successfully by passing `npm test` checks.
+- Code changes were reviewed and found suitable.
