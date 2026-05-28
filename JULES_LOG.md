@@ -68,3 +68,14 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Fixed Telegram command display to pass tool status and result output.
 - Wrapped OpenAI client creation in a retry mechanism with exponential backoff on 429 status code.
 - Cleaned up LLM unused thinkingContent warnings.
+
+## Fix Multiple Telegram Bot Bugs
+*   **Decisions:**
+    *   Hardened \`toTelegramMarkdown\` escaping logic in \`server/telegram/sender.js\` to correctly escape all 18 characters reserved by Telegram. Built nuclear fallback to prevent `400 Bad Request` API errors.
+    *   Replaced `Processing...` sequential text messages with a more native `bot.sendChatAction(chatId, 'typing')` typing indicator interval loop in \`server/telegram/bot.js\`.
+    *   Replaced blocking synchronous message sending loops in \`server/telegram/sender.js\` and `sendToolUpdate` with delayed (2000ms threshold) and non-blocking background logic to lower UI lag and make responses feel instantly faster. Set \`NTBA_FIX_319\` to squash bot warnings.
+    *   Skipped LLM Client Bug 2 regarding `JSON.parse` failures on stream responses. Investigated the codebase structure and concluded that \`server/ai/llm-client.js\` leverages the official `openai` Node.js SDK which robustly parses streaming `Server-Sent Events` internally, making custom `parseSSELines` fixes irrelevant to this version of the codebase.
+*   **Fixes:** Resolved MarkdownV2 markdown parsing failures, squashed "Processing..." notification noise, fixed laggy status updates using background tracking handles, and suppressed telegram bot driver deprecation log warnings.
+*   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
+*   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
+*   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending

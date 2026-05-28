@@ -1,3 +1,5 @@
+process.env.NTBA_FIX_319 = '1';
+process.env.NTBA_FIX_350 = '1';
 import TelegramBot from 'node-telegram-bot-api';
 import { processMessage } from '../ai/llm-client.js';
 import { startSession, stopSession, getSession, resetSession, getHistory, setActiveTelegramSession, clearActiveTelegramSession } from './session.js';
@@ -112,48 +114,74 @@ export function startBot(cfg) {
       }
 
       const activeSession = startSession();
-      await sendPlain(bot, chatId, 'Processing...');
+
 
 
       try {
         let aiFullResponse = '';
-        let lastTypingTime = 0;
-        const sendTyping = () => {
-            const now = Date.now();
-            if (now - lastTypingTime > 4000) {
-                lastTypingTime = now;
-                bot.sendChatAction(msg.chat.id, 'typing').catch(()=>{});
-            }
-        };
 
-        await processMessage(
+
+
+        let typingInterval = null;
+        async function showTyping() {
+          try {
+            await bot.sendChatAction(chatId, 'typing');
+          } catch(err) {}
+        }
+        await showTyping();
+        typingInterval = setInterval(showTyping, 4000);
+
+
+        const toolHandles = {};
+        const TOOL_UPDATE_THRESHOLD_MS = 2000;
+
+        try {
+          await processMessage(
             activeSession.conversationId,
             text,
             (chunk) => {
                 aiFullResponse += chunk;
-                sendTyping();
             },
             (toolCall) => {
-                sendToolUpdate(bot, chatId, toolCall.name, toolCall.args, 'running');
+                const id = toolCall.id || toolCall.name;
+                toolHandles[id] = {
+                  startTime: Date.now(),
+                  sent: false,
+                  timeout: setTimeout(() => {
+                    toolHandles[id].sent = true;
+                    sendToolUpdate(bot, chatId, toolCall.name, toolCall.args, 'running').catch(()=>{});
+                  }, TOOL_UPDATE_THRESHOLD_MS)
+                };
             },
             (toolResult) => {
+                const id = toolResult.id || toolResult.name;
                 const isError = typeof toolResult.result === 'string' && toolResult.result.startsWith('Error:');
                 const status = isError ? 'failed' : 'done';
-                sendToolUpdate(bot, chatId, toolResult.name, toolResult.result, status);
+                const handle = toolHandles[id];
+                if (handle) {
+                  clearTimeout(handle.timeout);
+                  const elapsed = Date.now() - handle.startTime;
+                  if (elapsed >= TOOL_UPDATE_THRESHOLD_MS) {
+                    sendToolUpdate(bot, chatId, toolResult.name, toolResult.result, status).catch(()=>{});
+                  }
+                  delete toolHandles[id];
+                }
             },
             (err) => {
-                sendError(bot, chatId, err);
-            },
-            () => {
-                // Throttle typing indicators
-                sendTyping();
+                sendError(bot, chatId, err).catch(()=>{});
             },
 
-            activeSession.abortController.signal,
             () => {
-                // Ignore tool progress for Telegram to avoid spam
-            }
-        );
+            },
+            activeSession.abortController.signal,
+            () => {}
+          );
+        } finally {
+          if (typingInterval) {
+            clearInterval(typingInterval);
+            typingInterval = null;
+          }
+        }
 
         if (activeSession.status !== 'stopped' && aiFullResponse.trim() !== '') {
             await sendAIReply(bot, chatId, aiFullResponse);

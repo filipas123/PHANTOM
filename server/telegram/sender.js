@@ -10,32 +10,54 @@ import telegramifyMarkdown from 'telegramify-markdown';
 export async function sendAIReply(bot, chatId, markdownText) {
   if (!markdownText || markdownText.trim() === '') return;
 
-  // Convert the AI's standard markdown to Telegram MarkdownV2
-  let converted;
-  try {
-    converted = telegramifyMarkdown(markdownText, 'escape');
-  } catch (err) {
-    // If conversion fails for any reason, fall back to plain text
-    console.error('[Telegram] Markdown conversion failed, sending plain:', err.message);
-    await sendPlain(bot, chatId, markdownText);
-    return;
-  }
-
-  // Split into chunks of max 4096 chars (Telegram hard limit)
+  const converted = toTelegramMarkdown(markdownText);
   const chunks = splitIntoChunks(converted, 4096);
 
-  for (const chunk of chunks) {
+  // Send first chunk sequentially, rest in parallel to speed up (Bug 4)
+  if (chunks.length === 1) {
     try {
-      await bot.sendMessage(chatId, chunk, {
+      await bot.sendMessage(chatId, chunks[0], {
         parse_mode: 'MarkdownV2',
         disable_web_page_preview: true,
       });
     } catch (err) {
-      // MarkdownV2 failed — fall back to plain text for this chunk
-      console.error('[Telegram] MarkdownV2 send failed, falling back to plain:', err.message);
-      // Strip markdown symbols and send as plain
-      const plain = markdownText.slice(0, 4096);
-      await sendPlain(bot, chatId, plain);
+      console.error('[Telegram] MarkdownV2 failed:', err.message);
+      const plain = markdownText
+        .replace(/[*_`~\\]/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .slice(0, 4096);
+      try {
+        await bot.sendMessage(chatId, plain);
+      } catch (e2) {
+        console.error('[Telegram] Plain fallback also failed:', e2.message);
+      }
+    }
+  } else {
+    // Send first chunk
+    try {
+      await bot.sendMessage(chatId, chunks[0], {
+        parse_mode: 'MarkdownV2',
+        disable_web_page_preview: true,
+      });
+    } catch (err) {
+      console.error('[Telegram] MarkdownV2 failed (chunk 0):', err.message);
+      const plain = markdownText.slice(0, 4096).replace(/[*_`~\\]/g, '').replace(/\n{3,}/g, '\n\n');
+      try { await bot.sendMessage(chatId, plain); } catch (e) {}
+    }
+
+    // Fire the rest in parallel with small delays
+    for (let i = 1; i < chunks.length; i++) {
+      await new Promise(r => setTimeout(r, 100)); // preserve order
+      try {
+        await bot.sendMessage(chatId, chunks[i], {
+          parse_mode: 'MarkdownV2',
+          disable_web_page_preview: true,
+        });
+      } catch (err) {
+        console.error('[Telegram] MarkdownV2 failed (chunk ' + i + '):', err.message);
+        const plain = markdownText.slice(i*4096, (i+1)*4096).replace(/[*_`~\\]/g, '').replace(/\n{3,}/g, '\n\n');
+        try { await bot.sendMessage(chatId, plain); } catch (e) {}
+      }
     }
   }
 }
@@ -170,4 +192,129 @@ function splitIntoChunks(text, maxLen) {
   }
   if (current.trim()) chunks.push(current.trim());
   return chunks.filter(c => c.length > 0);
+}
+
+/**
+ * Scans the converted MarkdownV2 string and escapes any reserved characters
+ * that are still unescaped, but ONLY outside of code blocks and inline code.
+ * This is the safety net after telegramify-markdown runs.
+ */
+export function fixUnescapedChars(text) {
+  const result = [];
+  let i = 0;
+  let inCodeBlock = false;
+  let inInlineCode = false;
+
+  while (i < text.length) {
+    // Detect code block (```)
+    if (text.slice(i, i + 3) === '```') {
+      inCodeBlock = !inCodeBlock;
+      result.push('```');
+      i += 3;
+      continue;
+    }
+
+    // Detect inline code (`)
+    if (text[i] === '`' && !inCodeBlock) {
+      inInlineCode = !inInlineCode;
+      result.push('`');
+      i++;
+      continue;
+    }
+
+    // Inside code — pass through raw, no escaping
+    if (inCodeBlock || inInlineCode) {
+      result.push(text[i]);
+      i++;
+      continue;
+    }
+
+    // Outside code — check if reserved char is properly escaped
+    const ch = text[i];
+    const reserved = '_*[]()~`>#+\\-=|{}.!\\';
+    if (reserved.includes(ch)) {
+      // Check if already escaped (preceded by \)
+      const prevChar = result.length > 0 ? result[result.length - 1] : '';
+      if (prevChar !== '\\') {
+        result.push('\\');
+      }
+    }
+    result.push(ch);
+    i++;
+  }
+
+  return result.join('');
+}
+
+/**
+ * Manual escape — used when telegramify-markdown throws.
+ * Strips all markdown formatting and returns safely escaped plain text.
+ */
+export function manualEscape(text) {
+  // Remove markdown formatting
+  text = text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    .replace(/~~(.*?)~~/g, '$1')
+    .replace(/`{3}[\s\S]*?`{3}/g, (m) => m) // keep code blocks raw
+    .replace(/`([^`]+)`/g, (m) => m);        // keep inline code raw
+
+  // Escape all reserved characters
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
+}
+
+
+function convertTables(text) {
+  if (!text.includes('|')) return text;
+
+  const lines = text.split('\n');
+  const result = [];
+  let inTable = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+      inTable = true;
+      // Skip the separator line (e.g., |---|---|)
+      if (line.replace(/[|\-\s:]/g, '').length === 0) continue;
+
+      // Convert table row to bullet points or just clean text
+      const cells = line.split('|').map(c => c.trim()).filter(c => c);
+      if (cells.length > 0) {
+        result.push('• ' + cells.join(' : '));
+      }
+    } else {
+      if (inTable) {
+        result.push(''); // add a blank line after table
+        inTable = false;
+      }
+      result.push(line);
+    }
+  }
+  return result.join('\n');
+}
+export function toTelegramMarkdown(text) {
+  if (!text || text.trim() === '') return '';
+
+  text = convertTables(text);
+
+  // Step 1: Replace horizontal rules before library processes them
+  text = text.replace(/^[ \t]*[-*_]{3,}[ \t]*$/gm, '──────────────────');
+
+  // Step 2: Run telegramify-markdown
+  let converted;
+  try {
+    converted = telegramifyMarkdown(text, 'escape');
+  } catch (err) {
+    // Library failed — do manual escaping as fallback
+    converted = manualEscape(text);
+  }
+
+  // Step 3: Nuclear fallback escape — catch anything telegramify-markdown missed
+  // Re-scan for unescaped reserved chars OUTSIDE of code spans and code blocks
+  converted = fixUnescapedChars(converted);
+
+  return converted;
 }
