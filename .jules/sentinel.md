@@ -7,3 +7,8 @@
 **Vulnerability:** The `/doctor/chat` endpoint allowed users to provide an arbitrary `baseUrl` for connecting to "OpenAI-compatible APIs." This was directly passed to `fetch` without validation, creating a Server-Side Request Forgery (SSRF) vulnerability. This could allow an attacker to send POST requests and read responses from internal/local services (e.g., `http://169.254.169.254/latest/meta-data/` on AWS).
 **Learning:** Any endpoint that constructs a URL dynamically from user input and makes outbound HTTP requests must explicitly validate the structure and target of that URL.
 **Prevention:** Enforce strict URL protocol validation (`http:`/`https:`) and actively block internal IP addresses and loopback hostnames (e.g., `localhost`, `127.0.0.1`, `169.254.169.254`, `0.0.0.0`, `::1`) before initiating the `fetch`.
+
+## $(date +"%Y-%m-%d") - Overly Permissive CORS Policy
+**Vulnerability:** The Express server used `app.use(cors())` with no arguments, allowing any origin to make cross-origin requests.
+**Learning:** Default CORS configurations often set `Access-Control-Allow-Origin: *`, putting applications at risk of CSRF or malicious cross-origin data exfiltration.
+**Prevention:** Always explicitly define the `origin` option in CORS configurations to restrict cross-origin requests strictly to trusted domains.
