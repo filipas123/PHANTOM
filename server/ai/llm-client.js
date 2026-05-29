@@ -31,13 +31,13 @@ export { getClient };
  *  - Thinking/reasoning token detection
  *  - Live tool output streaming via onToolProgress
  */
-export async function processMessage(conversationId, userMessage, onChunk, onToolCall, onToolResult, onError, onThinking, abortSignal, onToolProgress) {
+export async function processMessage(conversationId, userMessage, sessionContext, onChunk, onToolCall, onToolResult, onError, onThinking, abortSignal, onToolProgress) {
   // Get conversation history
   const history = getMessages(conversationId);
 
   // Build messages array
   const messages = [
-    { role: 'system', content: buildSystemPrompt() },
+    { role: 'system', content: buildSystemPrompt(sessionContext) },
   ];
 
   // Add memory context

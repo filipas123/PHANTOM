@@ -258,3 +258,41 @@ export function searchConversations(query) {
 
   return rows;
 }
+
+
+export async function recallMemory(query, options = {}) {
+  const { limit = 10, orderBy = 'relevance' } = options;
+
+  // If no query, return most recent entries
+  if (!query || query.trim() === '') {
+    return new Promise((resolve, reject) => {
+      try {
+        const rows = getDB().prepare('SELECT * FROM memories ORDER BY created_at DESC LIMIT ?').all(limit);
+        resolve(rows || []);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  // FTS5 MATCH syntax for search
+  return new Promise((resolve, reject) => {
+    try {
+      const q = '"' + query.replace(/"/g, '""') + '"';
+      const rows = getDB().prepare(`
+        SELECT
+          si.type,
+          si.content as matched_text,
+          m.*
+        FROM search_index si
+        JOIN memories m ON si.id = m.id AND si.type = 'memory'
+        WHERE search_index MATCH ?
+        ORDER BY m.created_at DESC
+        LIMIT ?
+      `).all(q, limit);
+      resolve(rows || []);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
