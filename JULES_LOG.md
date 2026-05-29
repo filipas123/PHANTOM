@@ -79,8 +79,4 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
-- Decided to fix the auto-scroll bug where the UI would inappropriately stop auto-scrolling when the DOM grew rapidly during streaming.
-- Discovered that the bug was caused by \`distFromBottom\` suddenly increasing and breaching the threshold during rapid content expansion, leading to \`_userScrolled\` incorrectly evaluating to true.
-- Tracked the previous scroll position \`_lastScrollTop\` and changed the evaluation logic to explicitly detect *upward* user scrolls rather than purely relying on \`distFromBottom > threshold\`.
-- Files changed: \`frontend/js/chat.js\`
-- Tests ran and passed.
+
