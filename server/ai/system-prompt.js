@@ -80,12 +80,12 @@ function getRecentTraces() {
   } catch { return ''; }
 }
 
-export function buildSystemPrompt() {
+export function buildSystemPrompt(sessionContext = "") {
   const sys = getSystemInfo();
   const skills = getAvailableSkills();
   const traces = getRecentTraces();
 
-  return `You are PHANTOM — an elite AI-powered pentesting and red teaming command center. You run locally on the operator's machine with full system access and unlimited tool iterations.
+  const basePrompt = `You are PHANTOM — an elite AI-powered pentesting and red teaming command center. You run locally on the operator's machine with full system access and unlimited tool iterations.
 
 ## IDENTITY & BEHAVIOR
 - You are a professional cybersecurity AI assistant
@@ -207,4 +207,7 @@ When creating tools/scripts:
 10. For general questions, use search_web + scrape_webpage for real-time data
 11. Create reusable scripts in workspace/skills/ for common operations
 12. Log traces of complex operations for self-improvement`;
+
+  if (!sessionContext) return basePrompt;
+  return `${basePrompt}\n\n${sessionContext}`;
 }

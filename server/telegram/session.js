@@ -1,46 +1,63 @@
 import { createConversation, getMessages } from '../memory/store.js';
 
-let currentSession = {
-  conversationId: null,
-  status: 'idle', // 'idle', 'running', 'stopped'
-  abortController: null
-};
+const sessions = new Map();
 
-export function startSession() {
-  if (!currentSession.conversationId) {
+export function getSession(chatId) {
+  if (!sessions.has(chatId)) {
+    sessions.set(chatId, {
+      conversationId: null,
+      status: 'idle', // 'idle', 'running', 'stopped'
+      abortController: null,
+      history: [],
+      bootstrapped: false,
+      systemContext: ''
+    });
+  }
+  return sessions.get(chatId);
+}
+
+export function startSession(chatId) {
+  const session = getSession(chatId);
+  if (!session.conversationId) {
     const conv = createConversation('Telegram Session');
-    currentSession.conversationId = conv.id;
+    session.conversationId = conv.id;
   }
-  currentSession.status = 'running';
-  currentSession.abortController = new AbortController();
-  return currentSession;
+  session.status = 'running';
+  session.abortController = new AbortController();
+  return session;
 }
 
-export function stopSession() {
-  if (currentSession.abortController) {
-    currentSession.abortController.abort();
-    currentSession.abortController = null;
+export function stopSession(chatId) {
+  const session = getSession(chatId);
+  if (session.abortController) {
+    session.abortController.abort();
+    session.abortController = null;
   }
-  currentSession.status = 'stopped';
-  return currentSession;
+  session.status = 'stopped';
+  return session;
 }
 
-export function getSession() {
-  return currentSession;
+export function resetSession(chatId) {
+    sessions.set(chatId, {
+      conversationId: null,
+      status: 'idle',
+      abortController: null,
+      history: [],
+      bootstrapped: false,
+      systemContext: ''
+    });
 }
 
-export function resetSession() {
-    currentSession.conversationId = null;
-    currentSession.status = 'idle';
-    if(currentSession.abortController) {
-        currentSession.abortController.abort();
-        currentSession.abortController = null;
-    }
+export function markSessionBootstrapped(chatId, systemContext) {
+  const session = getSession(chatId);
+  session.bootstrapped = true;
+  session.systemContext = systemContext;
 }
 
-export function getHistory() {
-  if (!currentSession.conversationId) return [];
-  return getMessages(currentSession.conversationId);
+export function getHistory(chatId) {
+  const session = getSession(chatId);
+  if (!session.conversationId) return [];
+  return getMessages(session.conversationId);
 }
 
 let _activeSession = null;

@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { startBot, stopBot, getBotStatus } from '../server/telegram/bot.js';
+vi.mock('../server/telegram/bootstrap.js', () => ({
+  bootstrapSession: vi.fn().mockResolvedValue({
+    skillsSummary: 'mock skills',
+    memorySummary: 'mock memory',
+    raw: { skills: [], memories: [] }
+  })
+}));
 import { getSession, resetSession } from '../server/telegram/session.js';
 
 // Mock node-telegram-bot-api
@@ -32,7 +39,7 @@ vi.mock('node-telegram-bot-api', () => {
 
 
 vi.mock('../server/ai/llm-client.js', () => ({
-  processMessage: vi.fn().mockImplementation((convId, text, onChunk) => {
+  processMessage: vi.fn().mockImplementation((convId, text, sessionCtx, onChunk) => {
       onChunk('AI Response');
       return Promise.resolve('AI Response');
   })
@@ -93,8 +100,8 @@ describe('Telegram Bot Integration', () => {
 
       // First force a session to be running
       const { startSession } = await import('../server/telegram/session.js');
-      startSession();
-      expect(getSession().status).toBe('running');
+      startSession(12345);
+      expect(getSession(12345).status).toBe('running');
 
       await mockMessageHandler({
           chat: { id: 12345 },
@@ -102,7 +109,7 @@ describe('Telegram Bot Integration', () => {
       });
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, '✅ Task stopped.');
-      expect(getSession().status).toBe('stopped');
+      expect(getSession(12345).status).toBe('stopped');
   });
 
   it('should start a session and call processMessage for normal messages', async () => {
@@ -116,6 +123,6 @@ describe('Telegram Bot Integration', () => {
       // Processing message was removed
       // It should also send the response back
       expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('AI Response'), expect.objectContaining({ parse_mode: 'MarkdownV2' }));
-      expect(getSession().status).toBe('idle'); // Should reset to idle after completion
+      expect(getSession(12345).status).toBe('idle'); // Should reset to idle after completion
   });
 });

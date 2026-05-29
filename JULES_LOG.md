@@ -80,3 +80,13 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
 
+
+## [$(date +"%Y-%m-%d")] Session Bootstrap Step Added
+- Implemented a session bootstrap step for the Telegram bot.
+- Created `server/telegram/bootstrap.js` to load skills from the `skills/` directory and memories from SQLite store via `recallMemory`.
+- Updated `server/memory/store.js` to add an overloaded `recallMemory` function supporting `limit` and `orderBy` options.
+- Refactored `server/telegram/session.js` to use a `Map` structure for `sessions` keyed by `chatId`.
+- Modified `server/telegram/bot.js` to invoke the bootstrap logic upon session start and pass the `session.systemContext`.
+- Updated `server/ai/system-prompt.js` and `server/ai/llm-client.js` to integrate the injected `sessionContext`.
+- Mocked dependencies properly and wrote Unit tests inside `tests/bootstrap.test.js` ensuring correct context extraction and formatting.
+- **Tests pass successfully** (`npm test`).
