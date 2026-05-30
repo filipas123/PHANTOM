@@ -112,3 +112,13 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `tests/api.test.js`
 **Tests:** 44 passed / 2 added
 **Commits:** Pending
+
+## $(date +"%Y-%m-%d") - Fix AI Thought Process Error & UI
+- **Decisions:**
+  - Fixed an argument mismatch in `processMessage` calls (`server/index.js`, `server/tools/executor.js`) which caused `onThinking` to map to `abortSignal`, leading to `LLM Error: onThinking is not a function`. Passed `null` for the missing `sessionContext`.
+  - Improved the UI for the thought process by converting it to use `<details>` and `<summary>` elements, making it collapsible natively.
+  - The `<details>` element remains `open=true` while streaming and collapses `open=false` when thinking completes.
+- **Fixes:** Added missing `sessionContext` parameter correctly aligning all callback mappings.
+- **Files Changed:** `server/index.js`, `server/tools/executor.js`, `frontend/js/chat.js`, `frontend/css/styles.css`
+- **Test Status:** Tested with `npm test`, executed Playwright to ensure UI loads correctly. All passed.
+- **Commit:** $(git rev-parse HEAD)

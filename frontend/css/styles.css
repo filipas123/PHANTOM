@@ -200,8 +200,9 @@ html, body {
   border-radius: var(--radius-md); animation: fadeIn 0.25s ease;
 }
 .thinking-label {
-  display: block; font-size: 11px; font-weight: 700; color: #818cf8;
+  display: list-item; font-size: 11px; font-weight: 700; color: #818cf8;
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  cursor: pointer; user-select: none;
 }
 .thinking-content {
   font-size: 13px; font-style: italic; color: #a5b4fc; line-height: 1.6;
