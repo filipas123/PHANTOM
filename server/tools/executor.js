@@ -848,6 +848,7 @@ async function delegateTaskTool({ task_description }, onProgress) {
     const result = await processMessage(
       subConv.id,
       task_description,
+      null, // sessionContext
       () => {}, // ignore chunking for now
       (tc) => { if (onProgress) onProgress(`[Subagent] Using tool: ${tc.name}`); },
       () => {},

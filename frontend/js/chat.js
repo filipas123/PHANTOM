@@ -104,10 +104,11 @@ window.Chat = {
     this.hideWelcome();
 
     if (!this.currentThinkingEl) {
-      this.currentThinkingEl = document.createElement('div');
+      this.currentThinkingEl = document.createElement('details');
       this.currentThinkingEl.className = 'message thinking';
+      this.currentThinkingEl.open = true;
 
-      const label = document.createElement('span');
+      const label = document.createElement('summary');
       label.className = 'thinking-label';
       label.textContent = '🧠 Thinking...';
       this.currentThinkingEl.appendChild(label);
@@ -136,6 +137,7 @@ window.Chat = {
   endThinking() {
     if (this.currentThinkingEl) {
       this.currentThinkingEl.classList.add('thinking-done');
+      this.currentThinkingEl.open = false;
       const label = this.currentThinkingEl.querySelector('.thinking-label');
       if (label) label.textContent = '🧠 Thought process';
     }
@@ -373,9 +375,9 @@ window.Chat = {
           let displayContent = msg.content;
           const thinkMatch = displayContent.match(/<think>([\s\S]*?)<\/think>/);
           if (thinkMatch) {
-            const thinkEl = document.createElement('div');
+            const thinkEl = document.createElement('details');
             thinkEl.className = 'message thinking thinking-done';
-            thinkEl.innerHTML = `<span class="thinking-label">🧠 Thought process</span><div class="thinking-content">${this.escapeHtml(thinkMatch[1].trim())}</div>`;
+            thinkEl.innerHTML = `<summary class="thinking-label">🧠 Thought process</summary><div class="thinking-content">${this.escapeHtml(thinkMatch[1].trim())}</div>`;
             this.messagesEl.appendChild(thinkEl);
             displayContent = displayContent.replace(/<think>[\s\S]*?<\/think>/, '').trim();
           }

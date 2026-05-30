@@ -65,6 +65,7 @@ wss.on('connection', (ws) => {
           await processMessage(
             conversationId,
             msg.content,
+            null, // sessionContext
             // onChunk — stream text
             (chunk) => {
               if (ws.readyState === ws.OPEN) {
