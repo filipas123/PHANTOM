@@ -129,3 +129,15 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Fixed duplicate logs printed during startup by modifying server/index.js.
 - Tests passing.
 
+
+## [$(date +"%Y-%m-%d")] — Session X
+**What I decided to work on:** I noticed a missing security boundary test and a potential XSS vulnerability where URL-encoded payloads like `javascript%3A` could bypass the markdown parser's `javascript:` link filter. I chose to implement this security hardening.
+**What I built/fixed:**
+- Added `decodeURIComponent` in `frontend/js/markdown.js` to correctly decode and block malicious protocols even if they are URL-encoded.
+- Wrapped the decoder in a `try/catch` to ignore `URIError` when encountering malformed encoded strings.
+- Added a full test suite `tests/markdown.test.js` to specifically target this markdown URL rendering security boundary.
+**Files changed:**
+- `frontend/js/markdown.js`
+- `tests/markdown.test.js`
+**Tests:** 51 passed / 5 added
+**Commits:** Pending
