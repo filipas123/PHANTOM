@@ -121,11 +121,12 @@ window.Management = {
   },
 
   async deleteMCP(id) {
-    if (!confirm('Are you sure you want to remove this MCP server?')) return;
-    try {
-      await fetch(`/api/mcp/servers/${id}`, { method: 'DELETE' });
-      this.loadMCPServers();
-    } catch {}
+    window.Toast.confirm('Are you sure you want to remove this MCP server?', async () => {
+      try {
+        await fetch(`/api/mcp/servers/${id}`, { method: 'DELETE' });
+        this.loadMCPServers();
+      } catch {}
+    });
   },
 
   // ─── Skills ───
@@ -167,11 +168,12 @@ window.Management = {
       const data = await res.json();
       if (data.success) {
         this.loadSkills();
+        window.Toast.show(data.message || 'Skill uploaded successfully', 'success');
       } else {
-        alert('Upload failed: ' + (data.error || 'Unknown error'));
+        window.Toast.show('Upload failed: ' + (data.error || 'Unknown error'), 'error');
       }
     } catch (err) {
-      alert('Upload error: ' + err.message);
+      window.Toast.show('Upload error: ' + err.message, 'error');
     } finally {
       fileInput.disabled = false;
     }
@@ -179,11 +181,12 @@ window.Management = {
   },
 
   async deleteSkill(name) {
-    if (!confirm(`Delete skill "${name}"?`)) return;
-    try {
-      await fetch(`/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' });
-      this.loadSkills();
-    } catch {}
+    window.Toast.confirm(`Delete skill "${name}"?`, async () => {
+      try {
+        await fetch(`/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        this.loadSkills();
+      } catch {}
+    });
   },
 
   esc(str) {
