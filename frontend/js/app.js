@@ -484,16 +484,17 @@
   }
 
   async function deleteConversation(id) {
-    if (!confirm('Are you sure you want to delete this conversation?')) return;
-    try {
-      await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
-      if (currentConversationId === id) {
-        currentConversationId = null;
-        Chat.clear();
-        Chat.showWelcome();
-      }
-      loadConversations();
-    } catch {}
+    window.Toast.confirm('Are you sure you want to delete this conversation?', async () => {
+      try {
+        await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+        if (currentConversationId === id) {
+          currentConversationId = null;
+          Chat.clear();
+          Chat.showWelcome();
+        }
+        loadConversations();
+      } catch {}
+    });
   }
 
   function newChat() {

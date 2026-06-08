@@ -147,3 +147,14 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 **Files changed:** `frontend/index.html`
 **Tests:** 51 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-05] — Session N
+**What I decided to work on:** I noticed the frontend still relied heavily on native `alert()` and `confirm()` popup boxes which provided a poor User Experience, blocking the main thread and looking unstyled compared to the rest of the dark glassmorphism theme.
+**What I built/fixed:**
+- Created a beautiful new custom `window.Toast` module in `frontend/js/toast.js` supporting standard toast notifications and a custom overlay confirmation dialog.
+- Replaced the `alert()` logic in `frontend/js/management.js` with `Toast.show()`.
+- Replaced all `confirm()` calls in `frontend/js/app.js` and `frontend/js/management.js` with `Toast.confirm(message, callback)`.
+- Verified UI elements visually using Playwright scripting.
+**Files changed:** `frontend/js/toast.js`, `frontend/js/main.js`, `frontend/css/styles.css`, `frontend/js/management.js`, `frontend/js/app.js`.
+**Tests:** 51 passed / 0 added
+**Commits:** Pending
