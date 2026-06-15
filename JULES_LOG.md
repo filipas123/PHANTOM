@@ -210,3 +210,19 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 **Files changed:** None.
 **Tests:** 52 passed / 0 added
 **Commits:** None required.
+
+## [2026-06-15] — Fix Telegram Bot Markdown Formatting & Add General Task Capabilities
+**What I decided to work on:** I noticed that the AI's responses to the user on Telegram were rendering raw markdown (e.g., `*🔥 PHANTOM Capabilities Overview*`) instead of properly formatting it. I also updated the AI's system prompt to allow for general tasks and file sending, based on the user's request.
+**What I built/fixed:**
+- Changed `parse_mode: 'HTML'` to `parse_mode: 'MarkdownV2'` across `server/telegram/sender.js` because `telegramify-markdown` specifically converts text to Telegram's MarkdownV2 syntax.
+- Removed custom double-escaping logic `fixUnescapedChars` which conflicted with `telegramify-markdown`.
+- Updated `sendToolUpdate` to securely escape tool names and previews using `telegramifyMarkdown`.
+- Updated test assertions in `tests/sender.test.js` and `tests/telegram.test.js` to expect `MarkdownV2`.
+- Updated `server/ai/system-prompt.js` to explicitly declare the AI as a general-purpose AI agent capable of downloading/working with files. Added documentation for the `send_file_to_telegram` tool so the AI knows how to send files back to the user.
+**Files changed:**
+- `server/telegram/sender.js`
+- `tests/sender.test.js`
+- `tests/telegram.test.js`
+- `server/ai/system-prompt.js`
+**Tests:** 52 passed / 0 added
+**Commits:** Pending
