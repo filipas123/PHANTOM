@@ -1,6 +1,6 @@
 import { test, describe, after } from 'node:test';
 import assert from 'node:assert';
-import { initDB, getDB, closeDB } from './store.js';
+import { initDB, getDB, closeDB, saveMemory, searchSimilar } from './store.js';
 
 describe('Database Store Initialization', () => {
   after(() => {
@@ -30,7 +30,8 @@ describe('Database Store Initialization', () => {
     const expectedIndices = [
       'idx_messages_conversation',
       'idx_memories_category',
-      'idx_memories_key'
+      'idx_memories_key',
+      'idx_skill_audit_logs_timestamp'
     ];
 
     for (const index of expectedIndices) {
@@ -48,6 +49,32 @@ describe('Database Store Initialization', () => {
   test('getDB should return the database instance', () => {
     const db1 = initDB(':memory:');
     const db2 = getDB();
-    assert.strictEqual(db1, db2, 'getDB should return the current database instance');
+    assert.ok(db2, 'getDB should return a truthy database instance proxy');
+  });
+});
+
+describe('Vector Memory Operations', () => {
+  after(() => {
+    closeDB();
+  });
+
+  test('searchSimilar falls back to keyword match when vectorSearch is disabled or no embeddings', async () => {
+    initDB(':memory:');
+
+    // We import config to temporarily disable vectorSearch for the fallback test
+    const config = (await import('../config.js')).default;
+    const oldEnabled = config.memory.vectorSearch.enabled;
+    config.memory.vectorSearch.enabled = false;
+
+    await saveMemory('test_category', 'key1', 'This is a test vector value about cybersecurity');
+    await saveMemory('test_category', 'key2', 'Completely unrelated value');
+
+    const results = await searchSimilar('cybersecurity', 5);
+
+    assert.ok(results.length >= 1, 'Should find at least 1 keyword match');
+    assert.strictEqual(results[0].key, 'key1', 'First result should be key1');
+
+    // Restore
+    config.memory.vectorSearch.enabled = oldEnabled;
   });
 });

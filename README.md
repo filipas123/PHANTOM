@@ -32,19 +32,20 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 
 | Feature | Description |
 |---------|-------------|
+| 🛡️ **Multi-Agent Defense** | Orchestrator, Planner, and Specialist Agents (Log, Compliance, Threat Modeler) working in parallel via Task Graphs |
 | 🤖 **Any LLM Backend** | OpenAI, OpenRouter, Ollama, LM Studio, DeepSeek, Claude — any OpenAI-compatible API |
 | ⚡ **Real-Time Streaming** | Live tool execution output, typing animations, and AI thinking display |
 | 🔓 **Unlimited Operations** | No tool call limits — PHANTOM runs autonomously until the task is done |
 | 🧠 **Self-Improving** | Creates its own tools, saves execution traces, learns from past runs |
 | 🔑 **Secure Sudo** | One-time sudo password with system validation — persisted securely |
 | 📁 **Workspace System** | Configurable workspace directory for scripts, reports, and file operations |
-| 🧩 **MCP Integration** | Model Context Protocol server management for extended capabilities |
-| 📦 **Skills System** | Import, manage, and create reusable skill packages (.zip import supported) |
+| 🧩 **MCP Server Hub** | Native Model Context Protocol infrastructure supporting typed JSON schemas and rate-limited endpoints |
+| 📦 **Skills System** | Trust-tiered SKILL.md packages utilizing `isolated-vm` sandboxing |
 | 🌐 **Web Research** | Built-in web search and webpage scraping for real-time information |
 | 🕷️ **Scrapling Integration** | Anti-bot bypass, Cloudflare solving, JS rendering via [Scrapling](https://github.com/D4Vinci/Scrapling) |
-| 💾 **Persistent Memory** | Remembers targets, credentials, findings across sessions |
+| 💾 **Semantic Memory** | Local Vector Search (`@xenova/transformers`) paired with standard FTS |
 | 🛑 **Emergency Stop** | Instant abort button to halt any running operation |
-| 🎨 **Premium Dark UI** | Glassmorphism, matrix background, smooth animations |
+| 🎨 **Premium Dark UI** | Includes live animated Canvas graph of multi-agent communication |
 
 ## 🚀 Quick Start
 
@@ -232,8 +233,9 @@ PHANTOM implements ideas from [Meta-Harness](https://arxiv.org/abs/2603.28052) f
 - [x] MCP server integration
 - [x] Skills system with .zip import
 - [x] Persistent memory (SQLite)
+- [x] Multi-agent orchestration
+- [x] Semantic Vector Memory
 - [ ] Docker support
-- [ ] Multi-agent orchestration
 - [ ] Web UI for memory visualization
 - [ ] CVE database integration
 

@@ -31,14 +31,21 @@ export { getClient };
  *  - Thinking/reasoning token detection
  *  - Live tool output streaming via onToolProgress
  */
-export async function processMessage(conversationId, userMessage, sessionContext, onChunk, onToolCall, onToolResult, onError, onThinking, abortSignal, onToolProgress) {
+export async function processMessage(conversationId, userMessage, sessionContext, onChunk, onToolCall, onToolResult, onError, onThinking, abortSignal, onToolProgress, agentRole = 'default') {
   // Get conversation history
   const history = getMessages(conversationId);
 
   // Build messages array
   const messages = [
-    { role: 'system', content: buildSystemPrompt(sessionContext) },
+    { role: 'system', content: buildSystemPrompt(sessionContext, agentRole) },
   ];
+
+  // Determine which model to use based on agent role
+  let targetModel = config.api.model;
+  if (config.agents?.enabled) {
+    if (agentRole === 'planner') targetModel = config.agents.plannerModel;
+    if (agentRole === 'executor') targetModel = config.agents.executorModel;
+  }
 
   // Add memory context
   try {
@@ -122,11 +129,16 @@ export async function processMessage(conversationId, userMessage, sessionContext
 
       while (retries < maxRetries) {
         try {
+          // If planner, strictly forbid raw tool access (tools undefined)
+          // The planner delegates to orchestrator/executors.
+          const effectiveTools = (agentRole === 'planner') ? undefined : (tools.length > 0 ? tools : undefined);
+          const effectiveToolChoice = (agentRole === 'planner') ? undefined : (tools.length > 0 ? 'auto' : undefined);
+
           response = await client.chat.completions.create({
-            model: config.api.model,
+            model: targetModel,
             messages,
-            tools: tools.length > 0 ? tools : undefined,
-            tool_choice: tools.length > 0 ? 'auto' : undefined,
+            tools: effectiveTools,
+            tool_choice: effectiveToolChoice,
             temperature: config.api.temperature,
             max_tokens: config.api.maxTokens,
             stream: true,

@@ -1,6 +1,8 @@
 import Database from 'better-sqlite3';
 import config from '../config.js';
 import { v4 as uuidv4 } from 'uuid';
+import { generateEmbedding } from './embeddings.js';
+import { searchSimilarVectors } from './vector-store.js';
 
 
 export function validateParams(sql, params) {
@@ -48,8 +50,19 @@ export function initDB(dbPath = config.db.path) {
       key TEXT NOT NULL,
       value TEXT NOT NULL,
       metadata TEXT,
+      vector_embedding BLOB,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS skill_audit_logs (
+      id TEXT PRIMARY KEY,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      skill_name TEXT NOT NULL,
+      trust_tier INTEGER NOT NULL,
+      inputs TEXT,
+      outputs TEXT,
+      duration_ms INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS settings (
@@ -89,6 +102,7 @@ export function initDB(dbPath = config.db.path) {
     CREATE INDEX IF NOT EXISTS idx_memories_category ON memories(category);
     CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key);
     CREATE INDEX IF NOT EXISTS idx_memories_updated ON memories(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_skill_audit_logs_timestamp ON skill_audit_logs(timestamp DESC);
     CREATE INDEX IF NOT EXISTS idx_memories_cat_updated ON memories(category, updated_at DESC);
     CREATE INDEX IF NOT EXISTS idx_mcp_servers_created ON mcp_servers(created_at DESC);
 
@@ -205,17 +219,67 @@ export function getMessages(conversationId) {
 }
 
 // ─── Memories ───
-export function saveMemory(category, key, value, metadata = {}) {
+export async function saveMemory(category, key, value, metadata = {}) {
   const id = uuidv4();
+
+  let embeddingBuffer = null;
+  if (config.memory?.vectorSearch?.enabled) {
+    const textToEmbed = `${category} ${key} ${value}`;
+    const embedding = await generateEmbedding(textToEmbed);
+    if (embedding) {
+      embeddingBuffer = Buffer.from(embedding.buffer);
+    }
+  }
+
   const existing = getDB().prepare('SELECT id FROM memories WHERE category = ? AND key = ?').get(category, key);
   if (existing) {
-    getDB().prepare('UPDATE memories SET value = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(value, JSON.stringify(metadata), existing.id);
+    getDB().prepare('UPDATE memories SET value = ?, metadata = ?, vector_embedding = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(value, JSON.stringify(metadata), embeddingBuffer, existing.id);
     return existing.id;
   }
-  getDB().prepare('INSERT INTO memories (id, category, key, value, metadata) VALUES (?, ?, ?, ?, ?)')
-    .run(id, category, key, value, JSON.stringify(metadata));
+  getDB().prepare('INSERT INTO memories (id, category, key, value, metadata, vector_embedding) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, category, key, value, JSON.stringify(metadata), embeddingBuffer);
   return id;
+}
+
+/**
+ * Searches memories combining exact match, FTS (if applicable), and vector similarity.
+ * @param {string} query - The search query.
+ * @param {number} limit - Max results to return.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function searchSimilar(query, limit = 5) {
+  let memories = [];
+  try {
+    memories = getDB().prepare('SELECT id, category, key, value, metadata, vector_embedding FROM memories').all();
+  } catch (err) {
+    console.error('Error fetching memories for search:', err);
+    return [];
+  }
+
+  if (config.memory?.vectorSearch?.enabled) {
+    const queryVector = await generateEmbedding(query);
+    if (queryVector) {
+      const similar = searchSimilarVectors(queryVector, memories, limit);
+      // Map back to standard return format without raw embeddings
+      return similar.map(m => {
+        const { vector_embedding, ...rest } = m;
+        return rest;
+      });
+    }
+  }
+
+  // Fallback to basic keyword search if vector search fails or is disabled
+  const lowerQuery = query.toLowerCase();
+  const keywordResults = memories.filter(m =>
+    (m.key && m.key.toLowerCase().includes(lowerQuery)) ||
+    (m.value && m.value.toLowerCase().includes(lowerQuery))
+  );
+
+  return keywordResults.slice(0, limit).map(m => {
+    const { vector_embedding, ...rest } = m;
+    return rest;
+  });
 }
 
 export function searchMemories(query, category = null) {

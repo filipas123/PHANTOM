@@ -33,6 +33,20 @@ const config = {
   db: {
     path: join(ROOT, 'phantom.db'),
   },
+  agents: {
+    enabled: process.env.AGENTS_ENABLED === 'true' || false,
+    plannerModel: process.env.AGENTS_PLANNER_MODEL || 'gpt-4o',
+    executorModel: process.env.AGENTS_EXECUTOR_MODEL || 'gpt-4o',
+  },
+  skills: {
+    trustTierDefault: parseInt(process.env.SKILLS_TRUST_TIER_DEFAULT || '3', 10),
+  },
+  memory: {
+    vectorSearch: {
+      enabled: process.env.VECTOR_SEARCH_ENABLED !== 'false',
+      dimensions: parseInt(process.env.VECTOR_SEARCH_DIMENSIONS || '384', 10),
+    }
+  },
   root: ROOT,
 };
 
@@ -48,6 +62,12 @@ export function updateConfig(updates) {
   if (updates.workspace !== undefined) config.workspace = updates.workspace;
   if (updates.telegramBotToken !== undefined) config.telegram.botToken = updates.telegramBotToken;
   if (updates.telegramUserId !== undefined) config.telegram.userId = updates.telegramUserId ? parseInt(updates.telegramUserId, 10) : null;
+  if (updates.agentsEnabled !== undefined) config.agents.enabled = updates.agentsEnabled;
+  if (updates.agentsPlannerModel !== undefined) config.agents.plannerModel = updates.agentsPlannerModel;
+  if (updates.agentsExecutorModel !== undefined) config.agents.executorModel = updates.agentsExecutorModel;
+  if (updates.skillsTrustTierDefault !== undefined) config.skills.trustTierDefault = parseInt(updates.skillsTrustTierDefault, 10);
+  if (updates.vectorSearchEnabled !== undefined) config.memory.vectorSearch.enabled = updates.vectorSearchEnabled;
+  if (updates.vectorSearchDimensions !== undefined) config.memory.vectorSearch.dimensions = parseInt(updates.vectorSearchDimensions, 10);
 }
 
 /**
@@ -62,6 +82,12 @@ export function loadPersistedSettings(getSetting) {
   const workspace = getSetting('workspace', null);
   const telegramBotToken = getSetting('telegram_bot_token', null);
   const telegramUserId = getSetting('telegram_user_id', null);
+  const agentsEnabled = getSetting('agents_enabled', null);
+  const agentsPlannerModel = getSetting('agents_planner_model', null);
+  const agentsExecutorModel = getSetting('agents_executor_model', null);
+  const skillsTrustTierDefault = getSetting('skills_trust_tier_default', null);
+  const vectorSearchEnabled = getSetting('vector_search_enabled', null);
+  const vectorSearchDimensions = getSetting('vector_search_dimensions', null);
 
   if (baseUrl) config.api.baseUrl = baseUrl;
   if (apiKey) config.api.apiKey = apiKey;
@@ -71,6 +97,12 @@ export function loadPersistedSettings(getSetting) {
   if (workspace) config.workspace = workspace;
   if (telegramBotToken) config.telegram.botToken = telegramBotToken;
   if (telegramUserId) config.telegram.userId = parseInt(telegramUserId, 10);
+  if (agentsEnabled !== null) config.agents.enabled = agentsEnabled === 'true';
+  if (agentsPlannerModel) config.agents.plannerModel = agentsPlannerModel;
+  if (agentsExecutorModel) config.agents.executorModel = agentsExecutorModel;
+  if (skillsTrustTierDefault !== null) config.skills.trustTierDefault = parseInt(skillsTrustTierDefault, 10);
+  if (vectorSearchEnabled !== null) config.memory.vectorSearch.enabled = vectorSearchEnabled === 'true';
+  if (vectorSearchDimensions !== null) config.memory.vectorSearch.dimensions = parseInt(vectorSearchDimensions, 10);
 
   // Ensure workspace directory exists
   try {
