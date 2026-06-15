@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "log_analysis_server": {
+      "command": "node",
+      "args": ["server/mcp/example_servers/log_server.js"],
+      "enabled": true
+    },
+    "config_auditing_server": {
+      "command": "node",
+      "args": ["server/mcp/example_servers/config_server.js"],
+      "enabled": true
+    },
+    "compliance_server": {
+      "command": "node",
+      "args": ["server/mcp/example_servers/compliance_server.js"],
+      "enabled": true
+    },
+    "threat_intel_server": {
+      "command": "node",
+      "args": ["server/mcp/example_servers/threat_intel_server.js"],
+      "enabled": true
+    }
+  }
+}

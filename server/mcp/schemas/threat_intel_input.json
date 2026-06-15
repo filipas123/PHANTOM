@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "cve_id": {
+      "type": "string",
+      "description": "The CVE ID to look up in public databases."
+    }
+  },
+  "required": ["cve_id"]
+}

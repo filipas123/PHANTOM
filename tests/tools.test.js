@@ -55,8 +55,8 @@ describe('Memory Store', () => {
     closeDB();
   });
 
-  it('save_memory and recall_memory should round-trip correctly', () => {
-    saveMemory('Test', 'test-key', 'test-value');
+  it('save_memory and recall_memory should round-trip correctly', async () => {
+    await saveMemory('Test', 'test-key', 'test-value');
     const results = searchMemories('test');
 
     expect(results.length).toBeGreaterThan(0);

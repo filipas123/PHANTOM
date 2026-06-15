@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "log_file": {
+      "type": "string",
+      "description": "Path to the log file to analyze."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Regex pattern or keyword to search for anomalies."
+    }
+  },
+  "required": ["log_file"]
+}

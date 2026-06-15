@@ -453,6 +453,7 @@
         <div class="manage-tabs">
           <button type="button" class="manage-tab active" data-tab="mcp-tab" aria-label="MCP Servers Tab">🔌 MCP Servers</button>
           <button type="button" class="manage-tab" data-tab="skills-tab" aria-label="Skills Tab">🧠 Skills</button>
+          <button type="button" class="manage-tab" data-tab="analysis-tab" aria-label="Analysis Tab">🛡️ Analysis</button>
         </div>
 
         <div class="manage-body">
@@ -487,11 +488,17 @@
           <!-- Skills Tab -->
           <div id="skills-tab" class="manage-tab-content">
             <p class="tab-desc">Import and manage AI skills. Skills are stored in your workspace.</p>
-            <div id="manage-skills-list" class="manage-list"></div>
-            <div class="manage-skill-actions">
+            <div id="skill-manager-root"></div>
+            <div id="manage-skills-list" class="manage-list" style="display:none;"></div>
+            <div class="manage-skill-actions" style="margin-top: 15px;">
               <label class="btn btn-secondary btn-sm" for="skill-zip-input">📦 Import Skill (.zip)</label>
               <input type="file" id="skill-zip-input" accept=".zip" style="display:none;" />
             </div>
+          </div>
+
+          <!-- Analysis Dashboard Tab -->
+          <div id="analysis-tab" class="manage-tab-content">
+            <div id="analysis-dashboard-root"></div>
           </div>
         </div>
       </div>
