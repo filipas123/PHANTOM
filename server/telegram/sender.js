@@ -127,8 +127,8 @@ export async function sendFile(bot, chatId, filePath, caption = '') {
   // Security check: only allow files from workspace/ or /tmp/
   const workspaceDir = path.resolve(process.cwd(), 'workspace');
   const tmpDir = '/tmp';
-  const isInWorkspace = absPath.startsWith(workspaceDir);
-  const isInTmp = absPath.startsWith(tmpDir);
+  const isInWorkspace = absPath.startsWith(workspaceDir + path.sep) || absPath === workspaceDir;
+  const isInTmp = absPath.startsWith(tmpDir + path.sep) || absPath === tmpDir;
 
   if (!isInWorkspace && !isInTmp) {
     await sendError(bot, chatId, `File access denied: ${filePath}\nOnly files in workspace/ or /tmp/ can be sent.`);
