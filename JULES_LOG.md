@@ -248,3 +248,14 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `tests/tools.test.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-17] — Fix Path Traversal Vulnerability
+**What I decided to work on:** I decided to perform a Security Hardening Bug Hunt focusing on path traversal vulnerabilities. I noticed that the path validation logic in `server/tools/executor.js` and `server/telegram/sender.js` used a flawed `startsWith` check. By simply verifying `!resolvedPath.startsWith(safeRoot)`, an attacker could access a sibling directory (e.g., `/app/workspace-hack` if the safe root was `/app/workspace`) since the string does technically start with `/app/workspace`.
+**What I built/fixed:**
+- Updated the path verification logic in `readFileContent`, `writeFileContent`, `listDirectory`, and `editSourceCode` inside `server/tools/executor.js` to correctly enforce directory boundaries using `(!resolvedPath.startsWith(safeRoot + sep) && resolvedPath !== safeRoot)`.
+- Updated the file sending logic `isInWorkspace` and `isInTmp` inside `server/telegram/sender.js` to use `absPath.startsWith(workspaceDir + path.sep) || absPath === workspaceDir`.
+**Files changed:**
+- `server/tools/executor.js`
+- `server/telegram/sender.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending

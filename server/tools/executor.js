@@ -1,7 +1,7 @@
 import { spawn, execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
-import { dirname, resolve, join } from 'path';
+import { dirname, resolve, join, sep } from 'path';
 import os from 'os';
 import { saveMemory, searchMemories, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
@@ -361,7 +361,7 @@ async function readFileContent({ path, max_lines = 500 }) {
   try {
     const resolvedPath = resolve(path);
     const safeRoot = resolve(config.workspace);
-    if (!resolvedPath.startsWith(safeRoot)) {
+    if (!resolvedPath.startsWith(safeRoot + sep) && resolvedPath !== safeRoot) {
       return `Error: Access denied. Path is outside the workspace (${safeRoot})`;
     }
     const content = await readFile(resolvedPath, 'utf8');
@@ -382,7 +382,7 @@ async function writeFileContent({ path: filePath, content, append = false }) {
   try {
     const resolvedPath = resolve(filePath);
     const safeRoot = resolve(config.workspace);
-    if (!resolvedPath.startsWith(safeRoot)) {
+    if (!resolvedPath.startsWith(safeRoot + sep) && resolvedPath !== safeRoot) {
       return `Error: Access denied. Path is outside the workspace (${safeRoot})`;
     }
     await mkdir(dirname(resolvedPath), { recursive: true });
@@ -686,7 +686,7 @@ async function listDirectory({ path: dirPath, show_hidden = false }) {
   try {
     const resolvedPath = resolve(dirPath);
     const safeRoot = resolve(config.workspace);
-    if (!resolvedPath.startsWith(safeRoot)) {
+    if (!resolvedPath.startsWith(safeRoot + sep) && resolvedPath !== safeRoot) {
       return `Error: Access denied. Path is outside the workspace (${safeRoot})`;
     }
     const entries = await readdir(resolvedPath, { withFileTypes: true });
@@ -741,7 +741,7 @@ async function editSourceCode({ file_path, content, description }) {
 
     // Safety: only allow editing within the project directory
     const projectRoot = resolve(config.root);
-    if (!resolvedPath.startsWith(projectRoot)) {
+    if (!resolvedPath.startsWith(projectRoot + sep) && resolvedPath !== projectRoot) {
       return `Error: Can only edit files within the project directory (${projectRoot})`;
     }
 
