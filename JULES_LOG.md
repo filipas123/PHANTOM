@@ -293,3 +293,4 @@ Update Telegram bot integration: normal text replies, model command, formatted t
   - Updated `server/ai/system-prompt.js` to replace the default identity with the custom prompt when configured.
   - Added `.jules/bolt.md` reflecting insights on handling modals in Playwright e2e tests.
 - **Tests**: Ran `npm test`, passed 61 assertions successfully. Playwright script visually verified the UI configuration.
+Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' instead of '-s local' to fix the 'Invalid value for --strategy' error. Tested and committed the fix as a88719e4af83ece3102983517579e636359775f3.
