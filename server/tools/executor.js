@@ -908,7 +908,7 @@ async function rufloAgentSwarm({ goal }, onProgress) {
 
     if (onProgress) onProgress(`Starting swarm with goal: ${goal}`);
     // Then start the swarm
-    return await executeCommand({ command: `npx claude-flow swarm start -o "${goal}" -s local`, timeout: 600 }, onProgress);
+    return await executeCommand({ command: `npx claude-flow swarm start -o "${goal}" -s balanced`, timeout: 600 }, onProgress);
   } catch (err) {
     return `Error executing Ruflo swarm: ${err.message}`;
   }
