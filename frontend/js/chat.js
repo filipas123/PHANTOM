@@ -321,11 +321,11 @@ window.Chat = {
       const card = document.createElement('div');
       card.className = 'tool-card file-mod-card';
       card.id = `tool-${data.id}`;
-      
+
       const filePath = typeof data.args === 'object' ? (data.args.path || data.args.file_path || 'unknown file') : 'unknown file';
       const actionName = data.name === 'write_file' ? 'Creating file' : 'Editing file';
       const icon = data.name === 'write_file' ? '📄' : '📝';
-      
+
       card.innerHTML = `
         <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
           <span>${icon} <strong>${actionName}</strong></span>
@@ -480,12 +480,12 @@ window.Chat = {
           for (const tc of msg.tool_calls) {
             let args = {};
             try { args = typeof tc.function.arguments === 'string' ? JSON.parse(tc.function.arguments) : tc.function.arguments; } catch {}
-            
+
             if (tc.function.name === 'write_file' || tc.function.name === 'edit_source_code') {
               const filePath = args.path || args.file_path || 'unknown file';
               const actionName = tc.function.name === 'write_file' ? 'Created file' : 'Edited file';
               const icon = tc.function.name === 'write_file' ? '📄' : '📝';
-              
+
               const card = document.createElement('div');
               card.className = 'tool-card file-mod-card';
               card.innerHTML = `
