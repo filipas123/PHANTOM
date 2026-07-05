@@ -336,3 +336,20 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - `server/routes/api.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+## [2026-07-05] — Session X
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on empty `catch` blocks silently swallowing exceptions, which make debugging difficult and hide errors. I also optimized `detectPackageManager` in `server/tools/executor.js` to avoid using `execSync('which <tool>')` which blocks the Node.js event loop, replacing it with a synchronous search of `process.env.PATH`.
+**What I built/fixed:**
+- Added error logging via `console.error` and `console.warn` inside empty `catch` blocks across frontend and backend files.
+- Refactored `detectPackageManager` to iterate through `process.env.PATH` and use `existsSync` instead of `execSync`.
+**Files changed:**
+- `frontend/js/chat.js`
+- `frontend/js/settings.js`
+- `frontend/js/markdown.js`
+- `server/ai/llm-client.js`
+- `server/ai/system-prompt.js`
+- `server/config.js`
+- `server/telegram/sender.js`
+- `server/tools/executor.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending
