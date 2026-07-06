@@ -113,7 +113,9 @@ export function loadPersistedSettings(getSetting) {
     if (!existsSync(config.workspace)) {
       mkdirSync(config.workspace, { recursive: true });
     }
-  } catch {}
+  } catch (err) {
+    console.warn(`[Config] Failed to create workspace directory:`, err.message);
+  }
 
   console.log(`📁 Workspace: ${config.workspace}`);
   console.log(`🤖 Model: ${config.api.model}`);

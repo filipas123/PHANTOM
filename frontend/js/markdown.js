@@ -54,8 +54,8 @@ window.renderMarkdown = function(text) {
     let decodedUrl = cleanUrl;
     try {
       decodedUrl = decodeURIComponent(cleanUrl).trim();
-    } catch {
-      // Ignore URIError
+    } catch (err) {
+      console.warn('Failed to decode URI in markdown link:', err.message);
     }
     if (/^(?:javascript|vbscript|data):/i.test(decodedUrl)) {
       cleanUrl = '#';

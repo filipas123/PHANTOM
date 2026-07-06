@@ -100,7 +100,8 @@ export async function sendToolUpdate(bot, chatId, toolName, input, status) {
 
   try {
     await bot.sendMessage(chatId, msg, { parse_mode: 'MarkdownV2' });
-  } catch {
+  } catch (err) {
+    console.warn('[Telegram] Failed to send tool update as MarkdownV2, falling back to plain text:', err.message);
     await sendPlain(bot, chatId, `${statusText} ${toolName}${preview ? ': ' + preview : ''}`);
   }
 }
@@ -112,7 +113,8 @@ export async function sendError(bot, chatId, message) {
   try {
     const safe = String(message).replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
     await bot.sendMessage(chatId, `❌ *Error*\n${safe}`, { parse_mode: 'MarkdownV2' });
-  } catch {
+  } catch (err) {
+    console.warn('[Telegram] Failed to send error as MarkdownV2, falling back to plain text:', err.message);
     await sendPlain(bot, chatId, `❌ Error: ${message}`);
   }
 }

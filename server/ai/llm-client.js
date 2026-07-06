@@ -78,7 +78,9 @@ export async function processMessage(conversationId, userMessage, sessionContext
         content: `## RELEVANT MEMORIES\n${memoryContext}`,
       });
     }
-  } catch {}
+  } catch (err) {
+    console.warn(`[LLMClient] Failed to retrieve memory context:`, err.message);
+  }
 
   // Limit history to last 40 messages to keep context window lean
   const recentHistory = history.slice(-40);

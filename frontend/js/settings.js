@@ -443,7 +443,9 @@ Use your tool access through PHANTOM's execute_command and read_file capabilitie
                   aiEl.innerHTML = window.renderMarkdown(fullText);
                   scrollDoctorToBottom();
                 }
-              } catch {}
+              } catch (err) {
+                console.error('Failed to parse doctor response chunk:', err);
+              }
             }
           }
         }

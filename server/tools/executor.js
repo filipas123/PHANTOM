@@ -453,22 +453,14 @@ async function installTool({ name, method = 'auto', source }) {
 }
 
 function detectPackageManager() {
-  try {
-    execSync('which apt-get 2>/dev/null');
-    return 'apt';
-  } catch {}
-  try {
-    execSync('which pacman 2>/dev/null');
-    return 'pacman';
-  } catch {}
-  try {
-    execSync('which yum 2>/dev/null');
-    return 'yum';
-  } catch {}
-  try {
-    execSync('which dnf 2>/dev/null');
-    return 'yum';
-  } catch {}
+  const paths = (process.env.PATH || '').split(path.delimiter);
+  const findCmd = (cmd) => paths.some(p => existsSync(path.join(p, cmd)));
+
+  if (findCmd('apt-get')) return 'apt';
+  if (findCmd('pacman')) return 'pacman';
+  if (findCmd('yum')) return 'yum';
+  if (findCmd('dnf')) return 'yum';
+
   return 'apt'; // default
 }
 

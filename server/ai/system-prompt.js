@@ -21,10 +21,15 @@ function getSystemInfo() {
         const releaseContent = readFileSync('/etc/os-release', 'utf8');
         const match = releaseContent.match(/^PRETTY_NAME="?(.*?)"?$/m);
         info.distro = match && match[1] ? match[1] : 'Linux';
-      } catch { info.distro = 'Linux'; }
+      } catch (err) {
+        console.warn(`[SystemInfo] Failed to read os-release:`, err.message);
+        info.distro = 'Linux';
+      }
       try {
         info.kernel = os.release();
-      } catch {}
+      } catch (err) {
+        console.warn(`[SystemInfo] Failed to read kernel release:`, err.message);
+      }
     }
 
     const tools = ['nmap', 'python3', 'pip', 'git', 'curl', 'wget', 'nikto', 'sqlmap', 'hydra', 'john',
@@ -61,12 +66,17 @@ function getAvailableSkills() {
         try {
           const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
           return `- ${meta.name || e.name}: ${meta.description || 'No description'}`;
-        } catch {}
+        } catch (err) {
+          console.warn(`[SystemPrompt] Failed to parse skill.json for ${e.name}:`, err.message);
+        }
       }
       return `- ${e.name}`;
     });
     return skills;
-  } catch { return []; }
+  } catch (err) {
+    console.warn(`[SystemPrompt] Failed to get available skills:`, err.message);
+    return [];
+  }
 }
 
 /**
@@ -81,7 +91,10 @@ function getAvailableAgents() {
       const name = e.name.replace('.md', '');
       return `- ${name}: Sub-agent available for delegation`;
     });
-  } catch { return []; }
+  } catch (err) {
+    console.warn(`[SystemPrompt] Failed to load available agents:`, err.message);
+    return [];
+  }
 }
 
 /**
@@ -97,9 +110,15 @@ function getRecentTraces() {
     return files.map(f => {
       try {
         return readFileSync(join(tracesDir, f), 'utf8').substring(0, 500);
-      } catch { return ''; }
+      } catch (err) {
+        console.warn(`[SystemPrompt] Failed to load trace ${f}:`, err.message);
+        return '';
+      }
     }).filter(Boolean).join('\n---\n');
-  } catch { return ''; }
+  } catch (err) {
+    console.warn(`[SystemPrompt] Failed to load recent traces:`, err.message);
+    return '';
+  }
 }
 
 export function buildSystemPrompt(sessionContext = "", agentRole = "default") {
